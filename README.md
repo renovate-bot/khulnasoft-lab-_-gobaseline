@@ -1,8 +1,8 @@
-> **Check out our main project at [safing/portmaster](https://github.com/safing/portmaster)**
+> **Check out our main project at [khulnasoft/Staysec](https://github.com/khulnasoft/Staysec)**
 
-# Portbase
+# Staysec
 
-Portbase helps you quickly take off with your project. It gives you all the basic needs you would have for a service (_not_ tool!).
+Staysec helps you quickly take off with your project. It gives you all the basic needs you would have for a service (_not_ tool!).
 Here is what is included:
 
 - `log`: really fast and beautiful logging
@@ -14,9 +14,9 @@ Here is what is included:
 - `database`: intelligent and syncable database with hooks and easy integration with structs, uses buckets with different backends
 - `api`: a websocket interface to the database, can be extended with custom http handlers
 
-Before you continue, a word about this project. It was created to hold the base code for both Portmaster and Gate17. This is also what it will be developed for. If you have a great idea on how to improve gobaseline, please, by all means, raise an issue and tell us about it, but please also don't be surprised or offended if we ask you to create your own fork to do what you need. Portbase isn't for everyone, it's quite specific to our needs, but we decided to make it easily available to others.
+Before you continue, a word about this project. It was created to hold the base code for both Portmaster and Gate17. This is also what it will be developed for. If you have a great idea on how to improve gobaseline, please, by all means, raise an issue and tell us about it, but please also don't be surprised or offended if we ask you to create your own fork to do what you need. Staysec isn't for everyone, it's quite specific to our needs, but we decided to make it easily available to others.
 
-Portbase is actively maintained, please raise issues.
+Staysec is actively maintained, please raise issues.
 
 ## log
 
