@@ -10,10 +10,11 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/khulnasoft-lab/gobaseline/log"
-	"github.com/khulnasoft-lab/gobaseline/utils"
 	"github.com/safing/jess/filesig"
 	"github.com/safing/jess/lhash"
+
+	"github.com/khulnasoft-lab/gobaseline/log"
+	"github.com/khulnasoft-lab/gobaseline/utils"
 )
 
 // ScanStorage scans root within the storage dir and adds found

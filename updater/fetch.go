@@ -14,10 +14,11 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/khulnasoft-lab/gobaseline/log"
-	"github.com/khulnasoft-lab/gobaseline/utils/renameio"
 	"github.com/safing/jess/filesig"
 	"github.com/safing/jess/lhash"
+
+	"github.com/khulnasoft-lab/gobaseline/log"
+	"github.com/khulnasoft-lab/gobaseline/utils/renameio"
 )
 
 func (reg *ResourceRegistry) fetchFile(ctx context.Context, client *http.Client, rv *ResourceVersion, tries int) error {

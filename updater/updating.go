@@ -9,12 +9,12 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/safing/jess/filesig"
+	"github.com/safing/jess/lhash"
 	"golang.org/x/exp/slices"
 
 	"github.com/khulnasoft-lab/gobaseline/log"
 	"github.com/khulnasoft-lab/gobaseline/utils"
-	"github.com/safing/jess/filesig"
-	"github.com/safing/jess/lhash"
 )
 
 // UpdateIndexes downloads all indexes. An error is only returned when all
