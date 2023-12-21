@@ -1,4 +1,4 @@
-> **Check out our main project at [khulnasoft-lab/staysec](https://github.com/khulnasoft-lab/staysec)**
+> **Check out our main project at [safing/portmaster](https://github.com/safing/portmaster)**
 
 # Gobaseline
 

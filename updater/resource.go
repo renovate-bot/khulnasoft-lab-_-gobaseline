@@ -10,11 +10,10 @@ import (
 	"sync"
 
 	semver "github.com/hashicorp/go-version"
-	"github.com/safing/jess/filesig"
 
+	"github.com/safing/jess/filesig"
 	"github.com/khulnasoft-lab/gobaseline/log"
 	"github.com/khulnasoft-lab/gobaseline/utils"
-	"github.com/safing/jess/filesig"
 )
 
 var devVersion *semver.Version
