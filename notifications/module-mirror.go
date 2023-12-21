@@ -92,7 +92,7 @@ func mirrorModuleStatus(moduleFailure uint8, id, title, msg string) {
 			{
 				Text:    "Get Help",
 				Type:    ActionTypeOpenURL,
-				Payload: "https://khulnasoft.com/support/",
+				Payload: "https://safing.io/support/",
 			},
 		},
 	}

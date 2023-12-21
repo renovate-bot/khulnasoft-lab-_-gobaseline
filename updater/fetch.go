@@ -14,6 +14,8 @@ import (
 	"path/filepath"
 	"time"
 
+	"github.com/safing/jess/filesig"
+	"github.com/safing/jess/lhash"
 	"github.com/khulnasoft-lab/gobaseline/log"
 	"github.com/khulnasoft-lab/gobaseline/utils/renameio"
 )

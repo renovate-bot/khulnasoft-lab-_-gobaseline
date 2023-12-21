@@ -115,16 +115,16 @@ const (
 	// RequiresFeatureIDAnnotation can be used to mark a setting as only available
 	// when the user has a certain feature ID in the subscription plan.
 	// The type is []string or string.
-	RequiresFeatureIDAnnotation = "khulnasoft-lab/staysecui:config:requires-feature"
+	RequiresFeatureIDAnnotation = "safing/portmaster:ui:config:requires-feature"
 	// SettablePerAppAnnotation can be used to mark a setting as settable per-app and
 	// is a boolean.
-	SettablePerAppAnnotation = "khulnasoft-lab/staysecsettable-per-app"
+	SettablePerAppAnnotation = "safing/portmaster:settable-per-app"
 	// RequiresUIReloadAnnotation can be used to inform the UI that changing the value
 	// of the annotated setting requires a full reload of the user interface.
 	// The value of this annotation does not matter as the sole presence of
 	// the annotation key is enough. Though, users are advised to set the value
 	// of this annotation to true.
-	RequiresUIReloadAnnotation = "khulnasoft-lab/staysecui:requires-reload"
+	RequiresUIReloadAnnotation = "safing/portmaster:ui:requires-reload"
 )
 
 // QuickSettingsAction defines the action of a quick setting.
