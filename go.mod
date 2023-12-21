@@ -1,8 +1,6 @@
 module github.com/khulnasoft-lab/gobaseline
 
-go 1.21.1
-
-toolchain go1.21.5
+go 1.21.5
 
 require (
 	github.com/VictoriaMetrics/metrics v1.29.0
