@@ -12,6 +12,7 @@ import (
 
 	"github.com/khulnasoft-lab/gobaseline/log"
 	"github.com/khulnasoft-lab/gobaseline/utils"
+	"github.com/safing/jess/filesig"
 )
 
 // File represents a file from the update system.

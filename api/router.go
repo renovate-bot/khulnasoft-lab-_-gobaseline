@@ -145,9 +145,9 @@ func (mh *mainHandler) handle(w http.ResponseWriter, r *http.Request) error {
 		w.Header().Set(
 			"Content-Security-Policy",
 			"default-src 'self'; "+
-				"connect-src https://*.safing.io 'self'; "+
+				"connect-src https://*.khulnasoft.com 'self'; "+
 				"style-src 'self' 'unsafe-inline'; "+
-				"img-src 'self' data:",
+				"img-src 'self' data: blob:",
 		)
 	}
 
@@ -235,6 +235,7 @@ func (mh *mainHandler) handle(w http.ResponseWriter, r *http.Request) error {
 		http.Error(lrw, "Method not allowed.", http.StatusMethodNotAllowed)
 		return nil
 	default:
+		tracer.Debug("api: no handler registered for this path")
 		http.Error(lrw, "Not found.", http.StatusNotFound)
 		return nil
 	}

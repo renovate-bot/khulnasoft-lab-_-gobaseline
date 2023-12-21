@@ -16,7 +16,7 @@ import (
 
 const hostStatTTL = 1 * time.Second
 
-func registeHostMetrics() (err error) {
+func registerHostMetrics() (err error) {
 	// Register load average metrics.
 	_, err = NewGauge("host/load/avg/1", nil, getFloat64HostStat(LoadAvg1), &Options{Name: "Host Load Avg 1min", Permission: api.PermitUser})
 	if err != nil {
@@ -127,7 +127,7 @@ func LoadAvg5() (loadAvg float64, ok bool) {
 	return 0, false
 }
 
-// LoadAvg15 returns the  5-minute average system load.
+// LoadAvg15 returns the 15-minute average system load.
 func LoadAvg15() (loadAvg float64, ok bool) {
 	if stat := getLoadAvg(); stat != nil {
 		return stat.Load15 / float64(runtime.NumCPU()), true

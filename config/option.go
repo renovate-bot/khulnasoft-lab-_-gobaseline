@@ -3,6 +3,7 @@ package config
 import (
 	"encoding/json"
 	"fmt"
+	"reflect"
 	"regexp"
 	"sync"
 
@@ -65,6 +66,9 @@ type PossibleValue struct {
 // Format: <vendor/package>:<scope>:<identifier> //.
 type Annotations map[string]interface{}
 
+// MigrationFunc is a function that migrates a config option value.
+type MigrationFunc func(option *Option, value any) any
+
 // Well known annotations defined by this package.
 const (
 	// DisplayHintAnnotation provides a hint for the user
@@ -108,10 +112,19 @@ const (
 	// requirement. The type of RequiresAnnotation is []ValueRequirement
 	// or ValueRequirement.
 	RequiresAnnotation = "khulnasoft-lab/gobaseline:config:requires"
-	// RequiresFeaturePlan can be used to mark a setting as only available
+	// RequiresFeatureIDAnnotation can be used to mark a setting as only available
 	// when the user has a certain feature ID in the subscription plan.
 	// The type is []string or string.
-	RequiresFeatureID = "safing/portmaster:ui:config:requires-feature"
+	RequiresFeatureIDAnnotation = "khulnasoft-lab/staysecui:config:requires-feature"
+	// SettablePerAppAnnotation can be used to mark a setting as settable per-app and
+	// is a boolean.
+	SettablePerAppAnnotation = "khulnasoft-lab/staysecsettable-per-app"
+	// RequiresUIReloadAnnotation can be used to inform the UI that changing the value
+	// of the annotated setting requires a full reload of the user interface.
+	// The value of this annotation does not matter as the sole presence of
+	// the annotation key is enough. Though, users are advised to set the value
+	// of this annotation to true.
+	RequiresUIReloadAnnotation = "khulnasoft-lab/staysecui:requires-reload"
 )
 
 // QuickSettingsAction defines the action of a quick setting.
@@ -249,6 +262,9 @@ type Option struct {
 	// Annotations is considered mutable and setting/reading annotation keys
 	// must be performed while the option is locked.
 	Annotations Annotations
+	// Migrations holds migration functions that are given the raw option value
+	// before any validation is run. The returned value is then used.
+	Migrations []MigrationFunc `json:"-"`
 
 	activeValue         *valueCache // runtime value (loaded from config file or set by user)
 	activeDefaultValue  *valueCache // runtime default value (may be set internally)
@@ -301,6 +317,22 @@ func (option *Option) GetAnnotation(key string) (interface{}, bool) {
 	return val, ok
 }
 
+// AnnotationEquals returns whether the annotation of the given key matches the
+// given value.
+func (option *Option) AnnotationEquals(key string, value any) bool {
+	option.Lock()
+	defer option.Unlock()
+
+	if option.Annotations == nil {
+		return false
+	}
+	setValue, ok := option.Annotations[key]
+	if !ok {
+		return false
+	}
+	return reflect.DeepEqual(value, setValue)
+}
+
 // copyOrNil returns a copy of the option, or nil if copying failed.
 func (option *Option) copyOrNil() *Option {
 	copied, err := copystructure.Copy(option)
@@ -316,6 +348,30 @@ func (option *Option) IsSetByUser() bool {
 	defer option.Unlock()
 
 	return option.activeValue != nil
+}
+
+// UserValue returns the value set by the user or nil if the value has not
+// been changed from the default.
+func (option *Option) UserValue() any {
+	option.Lock()
+	defer option.Unlock()
+
+	if option.activeValue == nil {
+		return nil
+	}
+	return option.activeValue.getData(option)
+}
+
+// ValidateValue checks if the given value is valid for the option.
+func (option *Option) ValidateValue(value any) error {
+	option.Lock()
+	defer option.Unlock()
+
+	value = migrateValue(option, value)
+	if _, err := validateValue(option, value); err != nil {
+		return err
+	}
+	return nil
 }
 
 // Export expors an option to a Record.

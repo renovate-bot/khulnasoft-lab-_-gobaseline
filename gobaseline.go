@@ -10,7 +10,7 @@ import (
 
 func main() {
 	// Set Info
-	info.Set("Staysec", "0.0.1", "GPLv3", false)
+	info.Set("Gobaseline", "0.0.1", "GPLv3", false)
 
 	// Run
 	os.Exit(run.Run())
