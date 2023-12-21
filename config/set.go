@@ -37,70 +37,115 @@ func signalChanges() {
 	module.TriggerEvent(ChangeEvent, nil)
 }
 
-// replaceConfig sets the (prioritized) user defined config.
-func replaceConfig(newValues map[string]interface{}) []*ValidationError {
-	var validationErrors []*ValidationError
-
+// ValidateConfig validates the given configuration and returns all validation
+// errors as well as whether the given configuration contains unknown keys.
+func ValidateConfig(newValues map[string]interface{}) (validationErrors []*ValidationError, requiresRestart bool, containsUnknown bool) {
 	// RLock the options because we are not adding or removing
-	// options from the registration but rather only update the
-	// options value which is guarded by the option's lock itself
+	// options from the registration but rather only checking the
+	// options value which is guarded by the option's lock itself.
 	optionsLock.RLock()
 	defer optionsLock.RUnlock()
 
+	var checked int
 	for key, option := range options {
 		newValue, ok := newValues[key]
-
-		option.Lock()
-		option.activeValue = nil
-
 		if ok {
-			valueCache, err := validateValue(option, newValue)
-			if err == nil {
-				option.activeValue = valueCache
-			} else {
-				validationErrors = append(validationErrors, err)
-			}
-		}
+			checked++
 
-		handleOptionUpdate(option, true)
-		option.Unlock()
+			func() {
+				option.Lock()
+				defer option.Unlock()
+
+				newValue = migrateValue(option, newValue)
+				_, err := validateValue(option, newValue)
+				if err != nil {
+					validationErrors = append(validationErrors, err)
+				}
+
+				if option.RequiresRestart {
+					requiresRestart = true
+				}
+			}()
+		}
 	}
 
-	signalChanges()
-
-	return validationErrors
+	return validationErrors, requiresRestart, checked < len(newValues)
 }
 
-// replaceDefaultConfig sets the (fallback) default config.
-func replaceDefaultConfig(newValues map[string]interface{}) []*ValidationError {
-	var validationErrors []*ValidationError
-
+// ReplaceConfig sets the (prioritized) user defined config.
+func ReplaceConfig(newValues map[string]interface{}) (validationErrors []*ValidationError, requiresRestart bool) {
 	// RLock the options because we are not adding or removing
 	// options from the registration but rather only update the
-	// options value which is guarded by the option's lock itself
+	// options value which is guarded by the option's lock itself.
 	optionsLock.RLock()
 	defer optionsLock.RUnlock()
 
 	for key, option := range options {
 		newValue, ok := newValues[key]
 
-		option.Lock()
-		option.activeDefaultValue = nil
-		if ok {
-			valueCache, err := validateValue(option, newValue)
-			if err == nil {
-				option.activeDefaultValue = valueCache
-			} else {
-				validationErrors = append(validationErrors, err)
+		func() {
+			option.Lock()
+			defer option.Unlock()
+
+			option.activeValue = nil
+			if ok {
+				newValue = migrateValue(option, newValue)
+				valueCache, err := validateValue(option, newValue)
+				if err == nil {
+					option.activeValue = valueCache
+				} else {
+					validationErrors = append(validationErrors, err)
+				}
 			}
-		}
-		handleOptionUpdate(option, true)
-		option.Unlock()
+			handleOptionUpdate(option, true)
+
+			if option.RequiresRestart {
+				requiresRestart = true
+			}
+		}()
 	}
 
 	signalChanges()
 
-	return validationErrors
+	return validationErrors, requiresRestart
+}
+
+// ReplaceDefaultConfig sets the (fallback) default config.
+func ReplaceDefaultConfig(newValues map[string]interface{}) (validationErrors []*ValidationError, requiresRestart bool) {
+	// RLock the options because we are not adding or removing
+	// options from the registration but rather only update the
+	// options value which is guarded by the option's lock itself.
+	optionsLock.RLock()
+	defer optionsLock.RUnlock()
+
+	for key, option := range options {
+		newValue, ok := newValues[key]
+
+		func() {
+			option.Lock()
+			defer option.Unlock()
+
+			option.activeDefaultValue = nil
+			if ok {
+				newValue = migrateValue(option, newValue)
+				valueCache, err := validateValue(option, newValue)
+				if err == nil {
+					option.activeDefaultValue = valueCache
+				} else {
+					validationErrors = append(validationErrors, err)
+				}
+			}
+			handleOptionUpdate(option, true)
+
+			if option.RequiresRestart {
+				requiresRestart = true
+			}
+		}()
+	}
+
+	signalChanges()
+
+	return validationErrors, requiresRestart
 }
 
 // SetConfigOption sets a single value in the (prioritized) user defined config.
@@ -118,6 +163,7 @@ func setConfigOption(key string, value any, push bool) (err error) {
 	if value == nil {
 		option.activeValue = nil
 	} else {
+		value = migrateValue(option, value)
 		valueCache, vErr := validateValue(option, value)
 		if vErr == nil {
 			option.activeValue = valueCache
@@ -141,7 +187,7 @@ func setConfigOption(key string, value any, push bool) (err error) {
 	// finalize change, activate triggers
 	signalChanges()
 
-	return saveConfig()
+	return SaveConfig()
 }
 
 // SetDefaultConfigOption sets a single value in the (fallback) default config.
@@ -159,6 +205,7 @@ func setDefaultConfigOption(key string, value interface{}, push bool) (err error
 	if value == nil {
 		option.activeDefaultValue = nil
 	} else {
+		value = migrateValue(option, value)
 		valueCache, vErr := validateValue(option, value)
 		if vErr == nil {
 			option.activeDefaultValue = valueCache

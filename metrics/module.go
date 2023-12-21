@@ -58,11 +58,11 @@ func start() error {
 		return err
 	}
 
-	if err := registeHostMetrics(); err != nil {
+	if err := registerHostMetrics(); err != nil {
 		return err
 	}
 
-	if err := registeLogMetrics(); err != nil {
+	if err := registerLogMetrics(); err != nil {
 		return err
 	}
 
@@ -78,6 +78,17 @@ func start() error {
 }
 
 func stop() error {
+	// Wait until the metrics pusher is done, as it may have started reporting
+	// and may report a higher number than we store to disk. For persistent
+	// metrics it can then happen that the first report is lower than the
+	// previous report, making prometheus think that all that happened since the
+	// last report, due to the automatic restart detection.
+
+	// The registry is read locked when writing metrics.
+	// Write lock the registry to make sure all writes are finished.
+	registryLock.Lock()
+	registryLock.Unlock() //nolint:staticcheck
+
 	storePersistentMetrics()
 
 	return nil
@@ -104,6 +115,10 @@ func register(m Metric) error {
 
 	// Set flag that first metric is now registered.
 	firstMetricRegistered = true
+
+	if module.Status() < modules.StatusStarting {
+		return fmt.Errorf("registering metric %q too early", m.ID())
+	}
 
 	return nil
 }

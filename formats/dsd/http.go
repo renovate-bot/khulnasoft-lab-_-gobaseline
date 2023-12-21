@@ -5,8 +5,8 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"mime"
 	"net/http"
+	"strings"
 )
 
 // HTTP Related Errors.
@@ -37,21 +37,8 @@ func loadFromHTTP(body io.Reader, mimeType string, t interface{}) (format uint8,
 		return 0, fmt.Errorf("dsd: failed to read http body: %w", err)
 	}
 
-	// Get mime type from header, then check, clean and verify it.
-	if mimeType == "" {
-		return 0, ErrMissingContentType
-	}
-	mimeType, _, err = mime.ParseMediaType(mimeType)
-	if err != nil {
-		return 0, fmt.Errorf("dsd: failed to parse content type: %w", err)
-	}
-	format, ok := MimeTypeToFormat[mimeType]
-	if !ok {
-		return 0, ErrIncompatibleFormat
-	}
-
-	// Parse data..
-	return format, LoadAsFormat(data, format, t)
+	// Load depending on mime type.
+	return MimeLoad(data, mimeType, t)
 }
 
 // RequestHTTPResponseFormat sets the Accept header to the given format.
@@ -60,11 +47,6 @@ func RequestHTTPResponseFormat(r *http.Request, format uint8) (mimeType string, 
 	mimeType, ok := FormatToMimeType[format]
 	if !ok {
 		return "", ErrIncompatibleFormat
-	}
-	// Omit charset.
-	mimeType, _, err = mime.ParseMediaType(mimeType)
-	if err != nil {
-		return "", fmt.Errorf("dsd: failed to parse content type: %w", err)
 	}
 
 	// Request response format.
@@ -76,6 +58,7 @@ func RequestHTTPResponseFormat(r *http.Request, format uint8) (mimeType string, 
 // DumpToHTTPRequest dumps the given data to the HTTP request using the given
 // format. It also sets the Accept header to the same format.
 func DumpToHTTPRequest(r *http.Request, t interface{}, format uint8) error {
+	// Get mime type and set request format.
 	mimeType, err := RequestHTTPResponseFormat(r, format)
 	if err != nil {
 		return err
@@ -87,7 +70,7 @@ func DumpToHTTPRequest(r *http.Request, t interface{}, format uint8) error {
 		return fmt.Errorf("dsd: failed to serialize: %w", err)
 	}
 
-	// Set body.
+	// Add data to request.
 	r.Header.Set("Content-Type", mimeType)
 	r.Body = io.NopCloser(bytes.NewReader(data))
 
@@ -97,16 +80,8 @@ func DumpToHTTPRequest(r *http.Request, t interface{}, format uint8) error {
 // DumpToHTTPResponse dumpts the given data to the HTTP response, using the
 // format defined in the request's Accept header.
 func DumpToHTTPResponse(w http.ResponseWriter, r *http.Request, t interface{}) error {
-	// Get format from Accept header.
-	// TODO: Improve parsing of Accept header.
-	mimeType := r.Header.Get("Accept")
-	format, ok := MimeTypeToFormat[mimeType]
-	if !ok {
-		return ErrIncompatibleFormat
-	}
-
-	// Serialize data.
-	data, err := dumpWithoutIdentifier(t, format, "")
+	// Serialize data based on accept header.
+	data, mimeType, _, err := MimeDump(t, r.Header.Get("Accept"))
 	if err != nil {
 		return fmt.Errorf("dsd: failed to serialize: %w", err)
 	}
@@ -120,16 +95,84 @@ func DumpToHTTPResponse(w http.ResponseWriter, r *http.Request, t interface{}) e
 	return nil
 }
 
+// MimeLoad loads the given data into the interface based on the given mime type accept header.
+func MimeLoad(data []byte, accept string, t interface{}) (format uint8, err error) {
+	// Find format.
+	format = FormatFromAccept(accept)
+	if format == 0 {
+		return 0, ErrIncompatibleFormat
+	}
+
+	// Load data.
+	err = LoadAsFormat(data, format, t)
+	return format, err
+}
+
+// MimeDump dumps the given interface based on the given mime type accept header.
+func MimeDump(t any, accept string) (data []byte, mimeType string, format uint8, err error) {
+	// Find format.
+	format = FormatFromAccept(accept)
+	if format == AUTO {
+		return nil, "", 0, ErrIncompatibleFormat
+	}
+
+	// Serialize and return.
+	data, err = dumpWithoutIdentifier(t, format, "")
+	return data, mimeType, format, err
+}
+
+// FormatFromAccept returns the format for the given accept definition.
+// The accept parameter matches the format of the HTTP Accept header.
+// Special cases, in this order:
+// - If accept is an empty string: returns default serialization format.
+// - If accept contains no supported format, but a wildcard: returns default serialization format.
+// - If accept contains no supported format, and no wildcard: returns AUTO format.
+func FormatFromAccept(accept string) (format uint8) {
+	if accept == "" {
+		return DefaultSerializationFormat
+	}
+
+	var foundWildcard bool
+	for _, mimeType := range strings.Split(accept, ",") {
+		// Clean mime type.
+		mimeType = strings.TrimSpace(mimeType)
+		mimeType, _, _ = strings.Cut(mimeType, ";")
+		if strings.Contains(mimeType, "/") {
+			_, mimeType, _ = strings.Cut(mimeType, "/")
+		}
+		mimeType = strings.ToLower(mimeType)
+
+		// Check if mime type is supported.
+		format, ok := MimeTypeToFormat[mimeType]
+		if ok {
+			return format
+		}
+
+		// Return default mime type as fallback if any mimetype is okay.
+		if mimeType == "*" {
+			foundWildcard = true
+		}
+	}
+
+	if foundWildcard {
+		return DefaultSerializationFormat
+	}
+	return AUTO
+}
+
 // Format and MimeType mappings.
 var (
 	FormatToMimeType = map[uint8]string{
-		JSON:    "application/json; charset=utf-8",
 		CBOR:    "application/cbor",
+		JSON:    "application/json",
 		MsgPack: "application/msgpack",
+		YAML:    "application/yaml",
 	}
 	MimeTypeToFormat = map[string]uint8{
-		"application/json":    JSON,
-		"application/cbor":    CBOR,
-		"application/msgpack": MsgPack,
+		"cbor":    CBOR,
+		"json":    JSON,
+		"msgpack": MsgPack,
+		"yaml":    YAML,
+		"yml":     YAML,
 	}
 )
