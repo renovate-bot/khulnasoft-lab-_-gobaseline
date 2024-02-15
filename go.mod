@@ -23,7 +23,7 @@ require (
 	github.com/shirou/gopsutil v3.21.11+incompatible
 	github.com/stretchr/testify v1.8.4
 	github.com/tevino/abool v1.2.0
-	github.com/tidwall/gjson v1.17.0
+	github.com/tidwall/gjson v1.17.1
 	github.com/tidwall/sjson v1.2.5
 	github.com/vmihailenco/msgpack/v5 v5.4.1
 	go.etcd.io/bbolt v1.3.8
