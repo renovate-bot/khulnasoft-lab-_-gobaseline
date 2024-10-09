@@ -1,6 +1,8 @@
 module github.com/khulnasoft-lab/gobaseline
 
-go 1.21.5
+go 1.22.0
+
+toolchain go1.23.2
 
 require (
 	github.com/VictoriaMetrics/metrics v1.32.0
@@ -27,8 +29,8 @@ require (
 	github.com/tidwall/sjson v1.2.5
 	github.com/vmihailenco/msgpack/v5 v5.4.1
 	go.etcd.io/bbolt v1.3.8
-	golang.org/x/exp v0.0.0-20231219180239-dc181d75b848
-	golang.org/x/sync v0.5.0
+	golang.org/x/exp v0.0.0-20241009180824-f66d83c29e7c
+	golang.org/x/sync v0.8.0
 	golang.org/x/sys v0.16.0
 )
 
