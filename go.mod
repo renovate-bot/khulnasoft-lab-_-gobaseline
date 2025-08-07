@@ -19,7 +19,7 @@ require (
 	github.com/mitchellh/copystructure v1.2.0
 	github.com/safing/jess v0.3.3
 	github.com/safing/portmaster-android/go v0.0.0-20230830120134-3226ceac3bec
-	github.com/seehuhn/fortuna v1.0.1
+	github.com/seehuhn/fortuna v1.0.2
 	github.com/shirou/gopsutil v3.21.11+incompatible
 	github.com/stretchr/testify v1.8.4
 	github.com/tevino/abool v1.2.0
